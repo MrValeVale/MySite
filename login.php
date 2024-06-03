@@ -1,85 +1,59 @@
-<?php 
+<?php
+   ob_start();
+   session_start();
+?>
+<html lang = "en">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <link rel="stylesheet" href="loginstyle.css">
+   <title>Login</title>
+</head>
+<body>
+   <h2 style="margin-left:10rem; margin-top:5rem;">Enter Username and Password</h2> 
+   <?php
+      $msg = '';
+      $users = ['user'=>"test", "manager"=>"secret", "guest"=>"abc123"];
 
-session_start(); 
-
-include "db_conn.php";
-
-if (isset($_POST['uname']) && isset($_POST['password'])) {
-
-    function validate($data){
-
-       $data = trim($data);
-
-       $data = stripslashes($data);
-
-       $data = htmlspecialchars($data);
-
-       return $data;
-
-    }
-
-    $uname = validate($_POST['uname']);
-
-    $pass = validate($_POST['password']);
-
-    if (empty($uname)) {
-
-        header("Location: index.php?error=User Name is required");
-
-        exit();
-
-    }else if(empty($pass)){
-
-        header("Location: index.php?error=Password is required");
-
-        exit();
-
-    }else{
-
-        $sql = "SELECT * FROM users WHERE user_name='$uname' AND password='$pass'";
-
-        $result = mysqli_query($conn, $sql);
-
-        if (mysqli_num_rows($result) === 1) {
-
-            $row = mysqli_fetch_assoc($result);
-
-            if ($row['user_name'] === $uname && $row['password'] === $pass) {
-
-                echo "Logged in!";
-
-                $_SESSION['user_name'] = $row['user_name'];
-
-                $_SESSION['name'] = $row['name'];
-
-                $_SESSION['id'] = $row['id'];
-
-                header("Location: home.php");
-
-                exit();
-
-            }else{
-
-                header("Location: index.php?error=Incorect User name or password");
-
-                exit();
-
+      if (isset($_POST['login']) && !empty($_POST['username']) 
+      && !empty($_POST['password'])) {
+         $user=$_POST['username'];                  
+         if (array_key_exists($user, $users)){
+            if ($users[$_POST['username']]==$_POST['password']){
+               $_SESSION['valid'] = true;
+               $_SESSION['timeout'] = time();
+               $_SESSION['username'] = $_POST['username'];
+               $msg = "You have entered correct username and password";
             }
+            else {
+               $msg = "You have entered wrong Password";
+            }
+         }
+         else {
+            $msg = "You have entered wrong user name";
+         }
+      }
+   ?>
 
-        }else{
+   <h4 style="margin-left:10rem; color:red;"><?php echo $msg; ?></h4>
+   <br/><br/>
+   <form action = "<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>" method="post">
+      <div>
+         <label for="username">Username:</label>
+         <input type="text" name="username" id="name">
+      </div>
+      <div>
+         <label for="password">Password:</label>
+         <input type="password" name="password" id="password">
+      </div>
+      <section style="margin-left:2rem;">
+         <button type="submit" name="login">Login</button>
+      </section>
+   </form>
 
-            header("Location: index.php?error=Incorect User name or password");
-
-            exit();
-
-        }
-
-    }
-
-}else{
-
-    header("Location: index.php");
-
-    exit();
-
-}
+   <p style="margin-left: 2rem;"> 
+      <a href = "logout.php" tite = "Logout">Click here to clean Session.</a>
+   </p>
+   </div> 
+</body>
+</html>
