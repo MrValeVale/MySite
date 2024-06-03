@@ -1,8 +1,7 @@
-<?php
-   session_start();
-   unset($_SESSION["username"]);
-   unset($_SESSION["password"]);
-   
-   echo '<h4>You have cleaned session</h4>';
-   header('Refresh: 2; URL = login.php');
-?>
+<?php 
+ $past = time() - 100; 
+ //this makes the time in the past to destroy the cookie 
+ setcookie(ID_my_site, gone, $past); 
+ setcookie(Key_my_site, gone, $past); 
+ header("Location: login.php"); 
+ ?> 

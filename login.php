@@ -1,59 +1,99 @@
-<?php
-   ob_start();
-   session_start();
+<?php 
+
+//Connects to your Database 
+$conect = mysqli_connect("db location","username","password", "forks") or die(mysql_error()); 
+
+//Checks if there is a login cookie
+if(isset($_COOKIE['ID_your_site'])){ //if there is, it logs you in and directes you to the members page
+ 	$username = $_COOKIE['ID_your_site']; 
+ 	$pass = $_COOKIE['Key_your_site'];
+ 	$check = mysqli_query($conect, "SELECT * FROM users WHERE username = '$username'")or die(mysql_error());
+
+ 	while($info = mysqli_fetch_array( $check )){
+ 		if ($pass != $info['password']){}
+ 		else{
+ 			header("Location: login.php");
+		}
+ 	}
+ }
+
+ //if the login form is submitted 
+ if (isset($_POST['submit'])) {
+
+	// makes sure they filled it in
+ 	if(!$_POST['username']){
+ 		die('You did not fill in a username.');
+ 	}
+ 	if(!$_POST['pass']){
+ 		die('You did not fill in a password.');
+ 	}
+
+ 	// checks it against the database
+ 	if (!get_magic_quotes_gpc()){
+ 		$_POST['email'] = addslashes($_POST['email']);
+ 	}
+
+ 	$check = mysqli_query($conect, "SELECT * FROM users WHERE username = '".$_POST['username']."'")or die(mysql_error());
+
+ //Gives error if user dosen't exist
+ $check2 = mysqli_num_rows($check);
+ if ($check2 == 0){
+	die('That user does not exist in our database.<br /><br />If you think this is wrong <a href="login.php">try again</a>.');
+}
+
+while($info = mysqli_fetch_array( $check )){
+	$_POST['pass'] = stripslashes($_POST['pass']);
+ 	$info['password'] = stripslashes($info['password']);
+ 	$_POST['pass'] = md5($_POST['pass']);
+
+	//gives error if the password is wrong
+ 	if ($_POST['pass'] != $info['password']){
+ 		die('Incorrect password, please <a href="login.php">try again</a>.');
+ 	}
+	
+	else{ // if login is ok then we add a cookie 
+		$_POST['username'] = stripslashes($_POST['username']); 
+		$hour = time() + 3600; 
+		setcookie(ID_your_site, $_POST['username'], $hour); 
+		setcookie(Key_your_site, $_POST['pass'], $hour);	 
+ 
+		//then redirect them to the members area 
+		header("Location: members.php"); 
+	}
+}
+}
+else{
+// if they are not logged in 
 ?>
-<html lang = "en">
-<head>
-   <meta charset="UTF-8">
-   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-   <link rel="stylesheet" href="loginstyle.css">
-   <title>Login</title>
-</head>
-<body>
-   <h2 style="margin-left:10rem; margin-top:5rem;">Enter Username and Password</h2> 
-   <?php
-      $msg = '';
-      $users = ['user'=>"test", "manager"=>"secret", "guest"=>"abc123"];
 
-      if (isset($_POST['login']) && !empty($_POST['username']) 
-      && !empty($_POST['password'])) {
-         $user=$_POST['username'];                  
-         if (array_key_exists($user, $users)){
-            if ($users[$_POST['username']]==$_POST['password']){
-               $_SESSION['valid'] = true;
-               $_SESSION['timeout'] = time();
-               $_SESSION['username'] = $_POST['username'];
-               $msg = "You have entered correct username and password";
-            }
-            else {
-               $msg = "You have entered wrong Password";
-            }
-         }
-         else {
-            $msg = "You have entered wrong user name";
-         }
-      }
-   ?>
+ <form action="<?php echo $_SERVER['PHP_SELF']?>" method="post"> 
 
-   <h4 style="margin-left:10rem; color:red;"><?php echo $msg; ?></h4>
-   <br/><br/>
-   <form action = "<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>" method="post">
-      <div>
-         <label for="username">Username:</label>
-         <input type="text" name="username" id="name">
-      </div>
-      <div>
-         <label for="password">Password:</label>
-         <input type="password" name="password" id="password">
-      </div>
-      <section style="margin-left:2rem;">
-         <button type="submit" name="login">Login</button>
-      </section>
-   </form>
+ <table border="0"> 
 
-   <p style="margin-left: 2rem;"> 
-      <a href = "logout.php" tite = "Logout">Click here to clean Session.</a>
-   </p>
-   </div> 
-</body>
-</html>
+ <tr><td colspan=2><h1>Login</h1></td></tr> 
+
+ <tr><td>Username:</td><td> 
+
+ <input type="text" name="username" maxlength="40"> 
+
+ </td></tr> 
+
+ <tr><td>Password:</td><td> 
+
+ <input type="password" name="pass" maxlength="50"> 
+
+ </td></tr> 
+
+ <tr><td colspan="2" align="right"> 
+
+ <input type="submit" name="submit" value="Login"> 
+
+ </td></tr> 
+
+ </table> 
+
+ </form> 
+
+ <?php 
+ }
+ ?> 
