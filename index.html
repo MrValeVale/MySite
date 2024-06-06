@@ -3,16 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login 3</title>
+    <title>Login and Registration Form</title>
 </head>
 <body>
-    <h2>Login</h2>
-    <form action="login.php" method="post">
-        <label for="username">Username:</label>
-        <input type="text" id="uname" name="username" required><br><br>
-        <label for="password">Password:</label>
-        <input type="password" id="pass" name="password" required><br><br>
+    <h2>Login Form</h2>
+    <form action="login.php" method="get">
+        <div>
+            <label for="login-username">Username:</label>
+            <input type="text" id="login-username" name="username" required>
+        </div>
+        <div>
+            <label for="login-password">Password:</label>
+            <input type="password" id="login-password" name="password" required>
+        </div>
         <button type="submit">Login</button>
+    </form>
+
+    <h2>Registration Form</h2>
+    <form action="register.php" method="post">
+        <div>
+            <label for="register-username">Username:</label>
+            <input type="text" id="register-username" name="username" required>
+        </div>
+        <div>
+            <label for="register-password">Password:</label>
+            <input type="password" id="register-password" name="password" required>
+        </div>
+        <button type="submit">Register</button>
     </form>
 </body>
 </html>
