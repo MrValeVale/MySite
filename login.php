@@ -3,10 +3,10 @@
 session_start();
 
 // Database connection settings
-$servername = "localhost";
-$username = ""; // replace with your database username
-$password = ""; // replace with your database password
-$dbname = "https://testsitevale.000webhostapp.com/unames.sql";
+$servername = "sql.bsite.net\MSSQL2016";
+$username = "mrvalevale_"; // replace with your database username
+$password = "tenletters"; // replace with your database password
+$dbname = "mrvalevale_";
 
 // Create connection
 $conn = new mysqli($servername, $username, $password, $dbname);
