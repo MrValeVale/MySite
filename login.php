@@ -6,7 +6,7 @@ session_start();
 $servername = "localhost";
 $username = ""; // replace with your database username
 $password = ""; // replace with your database password
-$dbname = "unames.sql";
+$dbname = "https://testsitevale.000webhostapp.com/unames.sql";
 
 // Create connection
 $conn = new mysqli($servername, $username, $password, $dbname);
