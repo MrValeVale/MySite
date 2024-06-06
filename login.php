@@ -3,7 +3,7 @@
 session_start();
 
 // Database connection settings
-$servername = "sql.bsite.net\MSSQL2016";
+$servername = "sql.bsite.net\\MSSQL2016";
 $username = "mrvalevale_"; // replace with your database username
 $password = "tenletters"; // replace with your database password
 $dbname = "mrvalevale_";
