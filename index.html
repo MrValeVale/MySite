@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login and Registration Form2</title>
+    <title>Login and Registration Form</title>
 </head>
 <body>
     <h2>Login Form</h2>
-    <form action="login.php" method="get">
+    <form id="loginForm" method="post" action="/cgi-bin/login.cgi">
         <div>
             <label for="login-username">Username:</label>
             <input type="text" id="login-username" name="username" required>
@@ -18,9 +18,10 @@
         </div>
         <button type="submit">Login</button>
     </form>
+    <div id="loginResult"></div>
 
     <h2>Registration Form</h2>
-    <form action="register.php" method="post">
+    <form id="registerForm" method="post" action="/cgi-bin/register.cgi">
         <div>
             <label for="register-username">Username:</label>
             <input type="text" id="register-username" name="username" required>
@@ -31,5 +32,6 @@
         </div>
         <button type="submit">Register</button>
     </form>
+    <div id="registerResult"></div>
 </body>
 </html>
