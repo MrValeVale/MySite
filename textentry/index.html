@@ -6,11 +6,23 @@
 </head>
 <body>
   <h1>Submit Your Text</h1>
-  <form method="POST" action="https://mrvalevale.github.io/MySite/textentry">
-    <label for="student-text">Paste your text here:</label><br>
-    <textarea id="student-text" name="body" rows="10" cols="50" placeholder="Paste here..."></textarea><br>
-    <button type="submit">Submit</button>
-  </form>
-  <p>Your text will be saved once approved by the teacher.</p>
+  <label for="student-text">Paste your text here:</label><br>
+  <textarea id="student-text" rows="10" cols="50" placeholder="Paste here..."></textarea><br>
+  <button onclick="submitText()">Submit</button>
+
+  <p id="result">Your text will be saved once approved by the teacher.</p>
+
+  <script>
+    async function submitText() {
+      const text = document.getElementById('student-text').value;
+      const res = await fetch('https://eo2hkbi16647y7z.m.pipedream.net', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text })
+      });
+      document.getElementById("result").innerText =
+        res.ok ? "Submitted successfully!" : "Submission failed. Please try again.";
+    }
+  </script>
 </body>
 </html>
