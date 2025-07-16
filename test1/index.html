@@ -1,24 +1,36 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>SQL Playground</title>
+  <title>Login + SQL Demo</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
   <style>
     body { font-family: sans-serif; padding: 20px; }
-    textarea { width: 100%; height: 100px; }
-    pre { background: #f0f0f0; padding: 10px; }
-    table, td, th { border: 1px solid #aaa; border-collapse: collapse; padding: 4px; }
+    input, button { margin: 4px; }
+    pre { background: #f8f8f8; padding: 10px; }
   </style>
 </head>
 <body>
-  <h2>🧠 SQL Playground</h2>
-  <p>This is an in-browser SQL demo using SQLite and <code>sql.js</code>. You can write queries below.</p>
+  <h2>🧠 Login Demo (SQLite in Browser)</h2>
 
-  <textarea id="query">SELECT * FROM students;</textarea><br>
-  <button onclick="runQuery()">Run SQL</button>
+  <div>
+    <h3>Register</h3>
+    <input id="reg-username" placeholder="Username">
+    <input id="reg-password" placeholder="Password" type="password">
+    <button onclick="register()">Register</button>
+  </div>
 
-  <h3>Results:</h3>
-  <div id="results"><em>Waiting for query...</em></div>
+  <div>
+    <h3>Login</h3>
+    <input id="login-username" placeholder="Username">
+    <input id="login-password" placeholder="Password" type="password">
+    <button onclick="login()">Login</button>
+  </div>
+
+  <h3>Status:</h3>
+  <div id="status"><em>Loading database...</em></div>
+
+  <h3>Current Users Table:</h3>
+  <div id="users-table"></div>
 
   <script>
     let db;
@@ -26,41 +38,60 @@
     initSqlJs({ locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}` }).then(SQL => {
       db = new SQL.Database();
 
-      // Create and populate a table
-      db.run(`CREATE TABLE students (id INTEGER, name TEXT, grade INTEGER);
-              INSERT INTO students VALUES (1, 'Alice', 85);
-              INSERT INTO students VALUES (2, 'Bob', 92);
-              INSERT INTO students VALUES (3, 'Charlie', 78);`);
+      db.run(`CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE, password TEXT);`);
 
-      runQuery(); // run initial query
+      updateUsersTable();
+      document.getElementById("status").innerText = "Database ready.";
     });
 
-    function runQuery() {
-      const sql = document.getElementById("query").value;
-      let html = "";
+    function register() {
+      const u = document.getElementById("reg-username").value.trim();
+      const p = document.getElementById("reg-password").value.trim();
+
+      if (!u || !p) return alert("Please enter both fields.");
 
       try {
-        const results = db.exec(sql);
-        if (results.length === 0) {
-          html = "<em>No results.</em>";
-        } else {
-          results.forEach(result => {
-            html += "<table><tr>" +
-              result.columns.map(col => `<th>${col}</th>`).join("") +
-              "</tr>";
-
-            result.values.forEach(row => {
-              html += "<tr>" + row.map(val => `<td>${val}</td>`).join("") + "</tr>";
-            });
-
-            html += "</table>";
-          });
-        }
+        db.run(`INSERT INTO users (username, password) VALUES (?, ?);`, [u, p]);
+        document.getElementById("status").innerText = `✅ Registered user "${u}"`;
       } catch (e) {
-        html = `<pre>Error: ${e.message}</pre>`;
+        document.getElementById("status").innerText = `❌ Registration error: ${e.message}`;
       }
 
-      document.getElementById("results").innerHTML = html;
+      updateUsersTable();
+    }
+
+    function login() {
+      const u = document.getElementById("login-username").value.trim();
+      const p = document.getElementById("login-password").value.trim();
+
+      const stmt = db.prepare("SELECT * FROM users WHERE username = ? AND password = ?");
+      stmt.bind([u, p]);
+
+      if (stmt.step()) {
+        const row = stmt.getAsObject();
+        document.getElementById("status").innerText = `✅ Logged in as ${row.username}`;
+      } else {
+        document.getElementById("status").innerText = `❌ Login failed`;
+      }
+
+      stmt.free();
+    }
+
+    function updateUsersTable() {
+      let html = "";
+      const results = db.exec("SELECT id, username FROM users");
+
+      if (results.length) {
+        html += "<table border='1'><tr><th>ID</th><th>Username</th></tr>";
+        results[0].values.forEach(row => {
+          html += `<tr><td>${row[0]}</td><td>${row[1]}</td></tr>`;
+        });
+        html += "</table>";
+      } else {
+        html = "<em>No users registered.</em>";
+      }
+
+      document.getElementById("users-table").innerHTML = html;
     }
   </script>
 </body>
