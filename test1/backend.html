@@ -73,7 +73,9 @@
         const results = db.exec(q);
 
         if (results.length === 0) {
-          resultHTML = "<em>No output (query ran successfully).</em>";
+          resultHTML = "<em>No output (query ran successfully). Saved to localStorage.</em>";
+saveDBToStorage();
+
         } else {
           const res = results[0];
           resultHTML += "<table><tr>" + res.columns.map(c => `<th>${c}</th>`).join("") + "</tr>";
