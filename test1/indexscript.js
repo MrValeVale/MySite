@@ -8,6 +8,12 @@
       const b64 = btoa(String.fromCharCode(...data));
       localStorage.setItem(STORAGE_KEY, b64);
     }
+// reload the databse
+function reloadDatabase() {
+  db = loadDB(); // reload from localStorage
+  document.getElementById("status").innerText = "🔁 Database reloaded.";
+}
+
 
     // Load the database from localStorage
     function loadDB() {
