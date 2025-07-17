@@ -20,9 +20,7 @@
   <button onclick="loadDBFromStorage()">📥 Load Database</button>
   <button onclick="saveDBToStorage()">💾 Save Database</button>
   <button onclick="clearDB()">🧹 Clear Database</button>
-  <a href="https://www.w3schools.com/sql/
-">W3 schools HELP</a>
-  
+
   <!-- SQL Query Area -->
   <h3>Run SQL Query:</h3>
   <textarea id="query" placeholder="SELECT * FROM users;"></textarea>
@@ -31,6 +29,69 @@
   <!-- Output of query or status -->
   <div id="output"><em>Waiting for action...</em></div>
 
- 
+  <script>
+    let db, SQL;
+    const STORAGE_KEY = "sqljs-login-db";
+
+    // Save current DB to localStorage
+    function saveDBToStorage() {
+      const data = db.export();
+      const base64 = btoa(String.fromCharCode(...data));
+      localStorage.setItem(STORAGE_KEY, base64);
+      document.getElementById("output").innerHTML = "<em>✅ Database saved.</em>";
+    }
+
+    // Load DB from localStorage
+    function loadDBFromStorage() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const bytes = Uint8Array.from(atob(saved), c => c.charCodeAt(0));
+        db = new SQL.Database(bytes);
+        document.getElementById("output").innerHTML = "<em>✅ Database loaded from localStorage.</em>";
+      } else {
+        db = new SQL.Database();
+        document.getElementById("output").innerHTML = "<em>No database found. New DB created.</em>";
+      }
+    }
+
+    // Clear/reset the whole DB
+    function clearDB() {
+      if (!confirm("⚠️ WARNING: This will erase the entire database. Are you sure?")) return;
+      db = new SQL.Database();
+      saveDBToStorage();
+      document.getElementById("output").innerHTML = "<em>🧹 Database reset.</em>";
+    }
+
+    // Run a custom SQL query typed by student
+    function runQuery() {
+      const q = document.getElementById("query").value;
+      let resultHTML = "";
+
+      try {
+        const results = db.exec(q);
+
+        if (results.length === 0) {
+          resultHTML = "<em>No output (query ran successfully).</em>";
+        } else {
+          const res = results[0];
+          resultHTML += "<table><tr>" + res.columns.map(c => `<th>${c}</th>`).join("") + "</tr>";
+          res.values.forEach(row => {
+            resultHTML += "<tr>" + row.map(cell => `<td>${cell}</td>`).join("") + "</tr>";
+          });
+          resultHTML += "</table>";
+        }
+      } catch (err) {
+        resultHTML = `<em style='color:red;'>Error: ${err.message}</em>`;
+      }
+
+      document.getElementById("output").innerHTML = resultHTML;
+    }
+
+    // Load the SQL engine on page load
+    initSqlJs({ locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${f}` }).then(SQLLib => {
+      SQL = SQLLib;
+      loadDBFromStorage();
+    });
+  </script>
 </body>
 </html>
