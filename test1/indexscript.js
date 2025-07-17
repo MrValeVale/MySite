@@ -1,4 +1,4 @@
-<script>
+
     let db, SQL;
     const STORAGE_KEY = "sqljs-login-db";
 
@@ -60,4 +60,4 @@
 
       document.getElementById("status").innerText = "✅ Database loaded.";
     });
-  </script>
+
