@@ -5,17 +5,18 @@
   <title>Backend Control Panel</title>
   <!-- Load sql.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
- 
+  <script src="sql-helper.js"></script>
   <style>
     body { font-family: sans-serif; padding: 20px; }
     pre { background: #f8f8f8; padding: 10px; }
     button { margin: 5px; }
-    textarea { width: 100%; height: 100px; margin-top: 10px; }
+    textarea, input { width: 100%; margin-top: 10px; padding: 5px; }
     table, th, td { border: 1px solid #ccc; border-collapse: collapse; padding: 4px; }
+    .var-block { margin-top: 20px; padding: 10px; border: 1px solid #ddd; background: #f9f9f9; }
   </style>
 </head>
 <body>
-  <h2>🛠 Backend Control Panel 2 </h2>
+  <h2>🛠 Backend Control Panel</h2>
 
   <!-- Admin actions -->
   <button onclick="loadDBFromStorage()">📥 Load Database</button>
@@ -27,12 +28,21 @@
   <textarea id="query" placeholder="SELECT * FROM users;"></textarea>
   <button onclick="runQuery()">▶ Run Query</button>
 
+  <!-- Variable Assignment Area -->
+  <div class="var-block">
+    <h3>Assign SQL Result to Variable</h3>
+    <input id="varName" placeholder="Variable name (e.g. favSport)">
+    <textarea id="varQuery" placeholder="SELECT * FROM users WHERE category = 'favourite_sport';"></textarea>
+    <button onclick="assignToVariable()">📦 Save as Variable</button>
+  </div>
+
   <!-- Output of query or status -->
   <div id="output"><em>Waiting for action...</em></div>
 
   <script>
     let db, SQL;
     const STORAGE_KEY = "sqljs-login-db";
+    const VAR_STORE_KEY = "sqljs-student-vars";
 
     // Save current DB to localStorage
     function saveDBToStorage() {
@@ -90,7 +100,29 @@
       document.getElementById("output").innerHTML = resultHTML;
     }
 
-    // Load the SQL engine on page load
+    // Save a SQL query result to a JS variable stored in localStorage
+    function assignToVariable() {
+      const varName = document.getElementById("varName").value.trim();
+      const sql = document.getElementById("varQuery").value.trim();
+      if (!varName || !sql) return alert("Please fill in both fields.");
+
+      try {
+        const result = db.exec(sql);
+        if (result.length === 0) throw new Error("No data returned.");
+
+        const data = result[0];
+        const rows = data.values.map(row => Object.fromEntries(row.map((val, i) => [data.columns[i], val])));
+        const allVars = JSON.parse(localStorage.getItem(VAR_STORE_KEY) || "{}");
+        allVars[varName] = rows;
+        localStorage.setItem(VAR_STORE_KEY, JSON.stringify(allVars));
+
+        document.getElementById("output").innerHTML = `✅ Saved ${rows.length} rows to variable <code>${varName}</code>`;
+      } catch (e) {
+        document.getElementById("output").innerHTML = `<em style='color:red;'>${e.message}</em>`;
+      }
+    }
+
+    // Load SQL engine
     initSqlJs({ locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${f}` }).then(SQLLib => {
       SQL = SQLLib;
       loadDBFromStorage();
