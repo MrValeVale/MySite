@@ -1,0 +1,108 @@
+
+<!-- backend.html -->
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Backend Control Panel</title>
+  <!-- Load sql.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    pre { background: #f8f8f8; padding: 10px; }
+    button { margin: 5px; }
+    table, th, td { border: 1px solid #ccc; border-collapse: collapse; padding: 4px; }
+  </style>
+</head>
+<body>
+  <h2>🛠 Backend Control Panel</h2>
+
+  <!-- Admin actions -->
+  <button onclick="clearDB()">🧹 Clear Database</button>
+  <button onclick="saveToFile()">💾 Save DB to File</button>
+  <button onclick="listTables()">📊 Show Tables</button>
+  <div id="output"><em>Waiting for action...</em></div>
+
+  <script>
+    let db, SQL;
+    const STORAGE_KEY = "sqljs-login-db";
+
+    // Save current DB to localStorage
+    function saveToLocalStorage() {
+      const data = db.export();
+      const base64 = btoa(String.fromCharCode(...data));
+      localStorage.setItem(STORAGE_KEY, base64);
+    }
+
+    // Load DB from localStorage
+    function loadFromLocalStorage() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const bytes = Uint8Array.from(atob(saved), c => c.charCodeAt(0));
+        return new SQL.Database(bytes);
+      }
+      return null;
+    }
+
+    // Clear/reset the whole DB
+    function clearDB() {
+      if (!confirm("This will erase all data. Continue?")) return;
+      db = new SQL.Database();
+      saveToLocalStorage();
+      document.getElementById("output").innerHTML = "<em>✅ Database reset</em>";
+    }
+
+    // Save DB as a downloadable file
+    function saveToFile() {
+      const blob = new Blob([db.export()], { type: "application/octet-stream" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "student.sqlite";
+      a.click();
+    }
+
+    // Show all tables in the DB
+    function listTables() {
+      const stmt = db.prepare(`SELECT name FROM sqlite_master WHERE type='table'`);
+      let html = "<h3>Tables:</h3><ul>";
+      while (stmt.step()) {
+        const name = stmt.getAsObject().name;
+        html += `<li><strong>${name}</strong>${renderTable(name)}</li>`;
+      }
+      html += "</ul>";
+      document.getElementById("output").innerHTML = html;
+      stmt.free();
+    }
+
+    // Show contents of a table as HTML table
+    function renderTable(name) {
+      try {
+        const res = db.exec(`SELECT * FROM ${name}`);
+        if (!res.length) return " (empty)";
+
+        const cols = res[0].columns;
+        const rows = res[0].values;
+
+        let html = "<table><tr>" + cols.map(c => `<th>${c}</th>`).join("") + "</tr>";
+        rows.forEach(row => {
+          html += "<tr>" + row.map(cell => `<td>${cell}</td>`).join("") + "</tr>";
+        });
+        html += "</table>";
+        return html;
+      } catch (e) {
+        return `<em>Error loading table: ${e.message}</em>`;
+      }
+    }
+
+    // Load DB when page starts
+    initSqlJs({ locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${f}` }).then(SQLLib => {
+      SQL = SQLLib;
+      db = loadFromLocalStorage();
+      if (!db) {
+        db = new SQL.Database();
+        saveToLocalStorage();
+      }
+      document.getElementById("output").innerHTML = "<em>✅ Database ready.</em>";
+    });
+  </script>
+</body>
+</html>
