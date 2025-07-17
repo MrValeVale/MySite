@@ -5,6 +5,7 @@
   <title>Backend Control Panel</title>
   <!-- Load sql.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+  <script src="sql-helper.js"></script> <!-- Add helper script for students -->
   <style>
     body { font-family: sans-serif; padding: 20px; }
     pre { background: #f8f8f8; padding: 10px; }
@@ -71,7 +72,8 @@
         const results = db.exec(q);
 
         if (results.length === 0) {
-          resultHTML = "<em>No output (query ran successfully).</em>";
+          resultHTML = "<em>No output (query ran successfully). Saved to localStorage.</em>";
+          saveDBToStorage();
         } else {
           const res = results[0];
           resultHTML += "<table><tr>" + res.columns.map(c => `<th>${c}</th>`).join("") + "</tr>";
@@ -79,6 +81,7 @@
             resultHTML += "<tr>" + row.map(cell => `<td>${cell}</td>`).join("") + "</tr>";
           });
           resultHTML += "</table>";
+          saveDBToStorage();
         }
       } catch (err) {
         resultHTML = `<em style='color:red;'>Error: ${err.message}</em>`;
