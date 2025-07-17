@@ -1,52 +1,140 @@
+<!-- index.html -->
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Login with LocalStorage SQLite</title>
+  <title>Student Portal (Frontend)</title>
+  <!-- Load sql.js (SQLite compiled to JavaScript) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
   <style>
     body { font-family: sans-serif; padding: 20px; }
-    input, button { margin: 4px; }
+    .status { margin-top: 10px; font-weight: bold; }
+    .nav { margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h2>🧠 Welcome to the Student Portal</h2>
+
+  <!-- Login section -->
+  <div id="login-panel">
+    <input id="username" placeholder="Username">
+    <input id="password" type="password" placeholder="Password">
+    <button onclick="login()">Login</button>
+  </div>
+
+  <!-- Show when user is logged in -->
+  <div id="user-info" style="display:none;">
+    <p>✅ Logged in as: <span id="current-user"></span></p>
+    <button onclick="logout()">Log out</button>
+  </div>
+
+  <div class="status" id="status">Loading database...</div>
+
+  <!-- Link to backend.html -->
+  <div class="nav">
+    <a href="backend.html">🛠 Go to Backend</a>
+  </div>
+
+  <script>
+    let db, SQL;
+    const STORAGE_KEY = "sqljs-login-db";
+
+    // Save the database to localStorage
+    function saveDB() {
+      const data = db.export();
+      const b64 = btoa(String.fromCharCode(...data));
+      localStorage.setItem(STORAGE_KEY, b64);
+    }
+
+    // Load the database from localStorage
+    function loadDB() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const bytes = Uint8Array.from(atob(saved), c => c.charCodeAt(0));
+        return new SQL.Database(bytes);
+      }
+      return null;
+    }
+
+    // Login function: Check if username & password match a row in users table
+    function login() {
+      const u = document.getElementById("username").value.trim();
+      const p = document.getElementById("password").value.trim();
+
+      const stmt = db.prepare("SELECT * FROM users WHERE username = ? AND password = ?");
+      stmt.bind([u, p]);
+
+      if (stmt.step()) {
+        document.getElementById("current-user").innerText = u;
+        document.getElementById("login-panel").style.display = "none";
+        document.getElementById("user-info").style.display = "block";
+        document.getElementById("status").innerText = "✅ Login successful";
+      } else {
+        document.getElementById("status").innerText = "❌ Login failed";
+      }
+      stmt.free();
+    }
+
+    // Log the user out
+    function logout() {
+      document.getElementById("login-panel").style.display = "block";
+      document.getElementById("user-info").style.display = "none";
+      document.getElementById("status").innerText = "Logged out";
+    }
+
+    // Initialise the SQLite database in the browser
+    initSqlJs({ locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${f}` }).then(SQLLib => {
+      SQL = SQLLib;
+      db = loadDB();
+
+      // If no DB is found in localStorage, create a fresh one with a users table
+      if (!db) {
+        db = new SQL.Database();
+        db.run(`CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, password TEXT);
+                INSERT INTO users (username, password) VALUES ('demo', '1234');`);
+        saveDB();
+      }
+
+      document.getElementById("status").innerText = "✅ Database loaded.";
+    });
+  </script>
+</body>
+</html>
+
+<!-- backend.html -->
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Backend Control Panel</title>
+  <!-- Load sql.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
     pre { background: #f8f8f8; padding: 10px; }
+    button { margin: 5px; }
     table, th, td { border: 1px solid #ccc; border-collapse: collapse; padding: 4px; }
   </style>
 </head>
 <body>
-  <h2>🧠 Login Demo with Persistent DB</h2>
+  <h2>🛠 Backend Control Panel</h2>
 
-  <div>
-    <h3>Register</h3>
-    <input id="reg-username" placeholder="Username">
-    <input id="reg-password" placeholder="Password" type="password">
-    <button onclick="register()">Register</button>
-  </div>
-
-  <div>
-    <h3>Login</h3>
-    <input id="login-username" placeholder="Username">
-    <input id="login-password" placeholder="Password" type="password">
-    <button onclick="login()">Login</button>
-  </div>
-
-  <h3>Status:</h3>
-  <div id="status"><em>Loading database...</em></div>
-
-  <h3>Users Table:</h3>
-  <div id="users-table"></div>
+  <!-- Admin actions -->
+  <button onclick="clearDB()">🧹 Clear Database</button>
+  <button onclick="saveToFile()">💾 Save DB to File</button>
+  <button onclick="listTables()">📊 Show Tables</button>
+  <div id="output"><em>Waiting for action...</em></div>
 
   <script>
-    let db;
-    let SQL;
-
+    let db, SQL;
     const STORAGE_KEY = "sqljs-login-db";
 
-    // Auto-save DB to localStorage
+    // Save current DB to localStorage
     function saveToLocalStorage() {
       const data = db.export();
       const base64 = btoa(String.fromCharCode(...data));
       localStorage.setItem(STORAGE_KEY, base64);
     }
 
-    // Load DB from localStorage if available
+    // Load DB from localStorage
     function loadFromLocalStorage() {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
@@ -56,71 +144,61 @@
       return null;
     }
 
-    // Update user table view
-    function updateUsersTable() {
-      let html = "";
-      const results = db.exec("SELECT id, username FROM users");
-
-      if (results.length) {
-        html += "<table><tr><th>ID</th><th>Username</th></tr>";
-        results[0].values.forEach(row => {
-          html += `<tr><td>${row[0]}</td><td>${row[1]}</td></tr>`;
-        });
-        html += "</table>";
-      } else {
-        html = "<em>No users registered.</em>";
-      }
-
-      document.getElementById("users-table").innerHTML = html;
+    // Clear/reset the whole DB
+    function clearDB() {
+      if (!confirm("This will erase all data. Continue?")) return;
+      db = new SQL.Database();
+      saveToLocalStorage();
+      document.getElementById("output").innerHTML = "<em>✅ Database reset</em>";
     }
 
-    // Register new user
-    function register() {
-      const u = document.getElementById("reg-username").value.trim();
-      const p = document.getElementById("reg-password").value.trim();
-      if (!u || !p) return alert("Please enter both fields.");
-
-      try {
-        db.run(`INSERT INTO users (username, password) VALUES (?, ?)`, [u, p]);
-        document.getElementById("status").innerText = `✅ Registered user "${u}"`;
-        saveToLocalStorage();
-      } catch (e) {
-        document.getElementById("status").innerText = `❌ Registration error: ${e.message}`;
-      }
-
-      updateUsersTable();
+    // Save DB as a downloadable file
+    function saveToFile() {
+      const blob = new Blob([db.export()], { type: "application/octet-stream" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "student.sqlite";
+      a.click();
     }
 
-    // Log in user
-    function login() {
-      const u = document.getElementById("login-username").value.trim();
-      const p = document.getElementById("login-password").value.trim();
-      const stmt = db.prepare("SELECT * FROM users WHERE username = ? AND password = ?");
-      stmt.bind([u, p]);
-
-      if (stmt.step()) {
-        const row = stmt.getAsObject();
-        document.getElementById("status").innerText = `✅ Logged in as ${row.username}`;
-      } else {
-        document.getElementById("status").innerText = `❌ Login failed`;
+    // Show all tables in the DB
+    function listTables() {
+      const stmt = db.prepare(`SELECT name FROM sqlite_master WHERE type='table'`);
+      let html = "<h3>Tables:</h3><ul>";
+      while (stmt.step()) {
+        const name = stmt.getAsObject().name;
+        html += `<li><strong>${name}</strong>${renderTable(name)}</li>`;
       }
-
+      html += "</ul>";
+      document.getElementById("output").innerHTML = html;
       stmt.free();
     }
 
-    // Init database
-    initSqlJs({ locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}` }).then(SQLLib => {
+    // Show contents of a table as HTML table
+    function renderTable(name) {
+      try {
+        const res = db.exec(`SELECT * FROM ${name}`);
+        if (!res.length) return " (empty)";
+
+        const cols = res[0].columns;
+        const rows = res[0].values;
+
+        let html = "<table><tr>" + cols.map(c => `<th>${c}</th>`).join("") + "</tr>";
+        rows.forEach(row => {
+          html += "<tr>" + row.map(cell => `<td>${cell}</td>`).join("") + "</tr>";
+        });
+        html += "</table>";
+        return html;
+      } catch (e) {
+        return `<em>Error loading table: ${e.message}</em>`;
+      }
+    }
+
+    // Load DB when page starts
+    initSqlJs({ locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${f}` }).then(SQLLib => {
       SQL = SQLLib;
       db = loadFromLocalStorage();
       if (!db) {
         db = new SQL.Database();
-        db.run(`CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE, password TEXT);`);
         saveToLocalStorage();
       }
-
-      document.getElementById("status").innerText = "✅ Database loaded.";
-      updateUsersTable();
-    });
-  </script>
-</body>
-</html>
